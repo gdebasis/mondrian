@@ -2,4 +2,4 @@
 
 A Java implementation
 
-![12x12 square](mondrian-12-12_final.htm)
+![12x12 square](sample.png)
