@@ -66,18 +66,17 @@ public class Rectangle implements Comparable<Rectangle> {
                 this.x_top*k, this.y_top*k, this.width*k, this.height*k, colorStr);
         
         String text_svg;
-        /*
+        
         if (height > width)
             text_svg = String.format(
             "<text font-family=\"Verdana\" font-size=\"10\" fill=\"black\""
                     + "transform=\"translate(%d,%d) rotate(270)\">%dx%d=%d</text>",
                     (int)((x_top+width/4.0f)*k), (int)((y_top+height/4.0f)*k), width, height, area());
         else
-        */
-        text_svg = String.format(
-            "<text font-family=\"Verdana\" font-size=\"10\" fill=\"black\""
-                + "transform=\"translate(%d,%d)\">%dx%d=%d</text>",
-                (int)((x_top+width/4.0f)*k), (int)((y_top+height/4.0f)*k), width, height, area());
+            text_svg = String.format(
+                "<text font-family=\"Verdana\" font-size=\"10\" fill=\"black\""
+                    + "transform=\"translate(%d,%d)\">%dx%d=%d</text>",
+                    (int)((x_top+width/4.0f)*k), (int)((y_top+height/4.0f)*k), width, height, area());
             
         return rect_svg + "\n" + text_svg;
     }

@@ -69,9 +69,7 @@ public class RectTiling {
         int numColors = colors.size();
         int avgWidth = width/k;
         
-        
         Rectangle prev = null;
-        int i = 0;
         
         while (width_covered < width) {
             int w = min_w + r.nextInt(avgWidth); // integer in [1, k]
@@ -92,9 +90,12 @@ public class RectTiling {
             tiles.add(tower);            
             width_covered += w;
             
+            //if (width_covered >= w) break;            
+            //int shift = r.nextInt(width - width_covered);
+            //width_covered += shift;  // add random shift
+            
             prev = tower;
             color = (color + 1)%numColors;
-            i++;
         }
     }
 
@@ -112,17 +113,21 @@ public class RectTiling {
     }
 
     void saveTile() {
-        saveTile(-1);
+        String fileName = saveTile(-1);
+        if (fileName!=null)
+            System.out.println(String.format("Output written to file %s", fileName));
+        
     }
     
-    void saveTile(int i) {
+    String saveTile(int i) {
         try {
-            saveTile(tiles, i);
+            return saveTile(tiles, i);
         }
         catch (Exception ex) { ex.printStackTrace(); }
+        return null;
     }
     
-    void saveTile(TreeSet<Rectangle> tiles, int i) throws IOException {
+    String saveTile(TreeSet<Rectangle> tiles, int i) throws IOException {
         String fileName = i>=0?
                 String.format("mondrian-%d-%d_%d.htm", width, height, i):
                 String.format("mondrian-%d-%d_final.htm", width, height);
@@ -138,6 +143,8 @@ public class RectTiling {
         bw.write("</body>\n</html>");
         bw.close();
         fw.close();
+        
+        return fileName;
     }
     
     int pickColor(Set<Color> seenColors) {
@@ -226,6 +233,7 @@ public class RectTiling {
             
             //iters++;
             //saveTile(iters);            
+            
             //System.out.println(tilesToString(presentState));
         }
         saveTile();            
@@ -266,11 +274,21 @@ public class RectTiling {
     
     public static void main(String[] args) {
         try {
+            int N = 8, k = 2; // defaults
+            if (args.length < 2) {
+                System.err.println("Expected argument: <N> <#towers>");
+            }
+            else {
+                N = Integer.parseInt(args[0]);
+                k = Integer.parseInt(args[1]);
+            }
+            
             RectTiling.init();
             
-            RectTiling mondrian = new RectTiling(9, 9, 5);            
+            RectTiling mondrian = new RectTiling(N, N, k);            
             
             mondrian.fill();
+            
             System.out.println(mondrian.tilesToString(mondrian.tiles));
             System.out.println("Score = " + mondrian.mondrianScore());
         }
