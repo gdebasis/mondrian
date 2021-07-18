@@ -7,13 +7,19 @@ To build the project install `maven` and execute
 mvn compile
 ```
 
-The main class requires two arguments - i) the size of the sqauare to tile, and ii) the number of initial vertical bars (towers) to generate a solution.
-An example invocation is
+To run the main class, simply execute the script with the following argument structure
 ```
-mvn exec:java@solver -Dexec.args="10 4"
+run.sh <n> <depth> <probability of exploring a bad state>
 ```
-where we want to tile a 10x10 square with 4 pivot rectangles. Changing this number would yield different solutions.
+For example, a sample invocation is
+```
+run.sh 8 4 0.1 > nohup.out
+```
+where tile an 8x8 square with stochastic depth-first search (max depth to 4) and the probability of exploring along a bad (infeasible/worse) state is 0.1.
 
-The program creates an HTML file named `mondrian-NxN_final.htm`, where N is the square size (e.g. 10). You can open this file on a browser to visualize the solution, like the one shown below.
+The shell script also opens the browser with a rendering of the solution.
 
-![12x12 square](sample.png)
+The shell script works on Mac with the Chrome browser. For a different browser/OS, please change the last line of `run.sh`. 
+
+![8x8 square](sample.png)
+
