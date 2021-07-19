@@ -38,13 +38,15 @@ public class IterativeDeepeningExplorer extends StochasticExplorer {
         boolean[] modes = {false, true};
         for (boolean mode: modes) { // mode=0/1 vertical/horizontal
             for (Rect r : x.blocks) {
-                int max = mode ? r.y + r.w : r.x + r.h;
+                int max = mode? r.y + r.w : r.x + r.h;
 
                 // create a new state and recursively visit that node
                 // (if the depth is less than max-depth)
                 // new state should be created vertically (if the current one is horizontal)
-                for (int mid = 1; mid <= max / 2; mid++) {
+                for (int mid=1; mid <= max/2; mid++) {
                     RectPair rp = r.split(mode, mid);
+                    if (rp==null)
+                        continue;
 
                     State next = new State(x, r, rp, mode);
                     next.addConstraintViolationPenalty();
@@ -53,7 +55,7 @@ public class IterativeDeepeningExplorer extends StochasticExplorer {
                     // else we explore it stochastically with prob = epsilon
                     boolean toExplore = next.score==maxScore || next.score>x.score?
                             (float)Math.random() < epsilon? true: false:
-                    true;
+                        true;
 
                     if (toExplore) {
                         System.out.println(x.toString() + " ---> " + next.toString());

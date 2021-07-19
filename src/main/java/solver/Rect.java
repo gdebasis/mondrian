@@ -22,6 +22,9 @@ public class Rect implements Comparable<Rect> {
     RectPair split(boolean vertical, int cut) {
         Rect a, b;
 
+        if (w-cut<=0 || h-cut<=0)
+            return null;
+
         if (vertical) {
             a = new Rect(x, y, cut, h);
             b = new Rect(x, y+cut, w-cut, h);
@@ -30,6 +33,7 @@ public class Rect implements Comparable<Rect> {
             a = new Rect(x, y, w, cut);
             b = new Rect(x+cut, y, w, h-cut);
         }
+
         return new RectPair(a, b);
     }
 
