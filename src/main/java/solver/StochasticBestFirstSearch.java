@@ -33,8 +33,8 @@ public class StochasticBestFirstSearch {
 
         while (numVisited++ <= MAX_VISITED) {
             if (numVisited%1000==0) {
-                System.out.println(String.format("Visited %d states", numVisited));
-                System.out.println("#states remaining in queue " + stateQueue.size());
+                System.err.println(String.format("Visited %d states", numVisited));
+                System.err.println("#states remaining in queue " + stateQueue.size());
             }
 
             State x = sample(); // sample() or take_best
@@ -44,7 +44,6 @@ public class StochasticBestFirstSearch {
                 continue; // depth too large... select another at lower depth
 
             boolean mode = rg.nextBoolean();
-
             update(x);  // update bestState
 
             for (Rect r : x.blocks) {
@@ -79,6 +78,8 @@ public class StochasticBestFirstSearch {
 
     void update(State x) {
         stateQueue.remove(x.areaMultiSet2String());
+        System.out.println("Visited state " + x.toString());
+
         // update the best state
         int score = x.getScore();
         if (score < bestScore || bestState==null) {
