@@ -1,5 +1,7 @@
 package solver;
 
+import java.util.Set;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -8,12 +10,14 @@ public class IterativeDeepeningExplorer extends StochasticExplorer {
     int bestScore;
     int maxScore;
     float epsilon;
+    Set<String> stateSignatures;
 
     IterativeDeepeningExplorer(int n, float epsilon) {
         super(n);
         maxScore = n*n;
         this.epsilon = epsilon;
         bestScore = maxScore;
+        stateSignatures = new HashSet<>();
     }
 
     public State epoch(int depth) { // dfs up to a specified depth
@@ -26,6 +30,14 @@ public class IterativeDeepeningExplorer extends StochasticExplorer {
     }
 
     public void visit(State x, int depth) { // x is the parent state
+
+        String signature = x.areaMultiSet2String();
+        if (stateSignatures.contains(signature)) {
+            System.out.println("Skipping state with signature " + signature);
+            return; // have seen a similar state before!
+        }
+        else
+            stateSignatures.add(signature);
 
         int score = x.getScore();
         if (score < bestScore || bestState==null) {

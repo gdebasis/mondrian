@@ -67,6 +67,14 @@ public class State implements Comparable<State> {
         return buff.toString();
     }
 
+    // There's no point of exploring a state that has the same
+    // signature in terms of the multiset representation of the areas
+    // Return a string signature of the multiset so that we know
+    // what states to avoid exploring
+    String areaMultiSet2String() {
+        return multiSetArea.keySet().toString();
+    }
+
     void addConstraintViolationPenalty() { // add penalty if applicable
         for (int freq: this.multiSetArea.values()) {
             if (freq > 1)
