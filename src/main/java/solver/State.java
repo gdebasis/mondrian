@@ -4,6 +4,7 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class State implements Comparable<State> {
     List<Rect> blocks;
@@ -59,26 +60,13 @@ public class State implements Comparable<State> {
         return score;
     }
 
-    List<Rect> sortByPosition() {
-        List<Rect> sortedByPosList = new ArrayList<>(blocks);
-        Collections.sort(sortedByPosList, new BlockByPosComprator());
-        return sortedByPosList;
-    }
-
-    String key() {
-        StringBuilder buff = new StringBuilder();
-        for (Rect r: sortByPosition())
-            buff.append(r.toString()).append("|");
-        if (buff.length()>1) buff.deleteCharAt(buff.length()-1);
-        return buff.toString();
-    }
-
     // There's no point of exploring a state that has the same
     // signature in terms of the multiset representation of the areas
     // Return a string signature of the multiset so that we know
     // what states to avoid exploring
     String areaMultiSet2String() {
-        return multiSetArea.keySet().stream().sorted().toString();
+        List<Integer> keys = multiSetArea.keySet().stream().sorted().collect(Collectors.toList());
+        return keys.toString();
     }
 
     void addConstraintViolationPenalty() { // add penalty if applicable
@@ -173,5 +161,8 @@ public class State implements Comparable<State> {
         fw.close();
     }
 
+    public int A_star_Heuristic() { // higher the better
+        return StochasticBestFirstSearch.maxDepth - depth + blocks.size();
+    }
 }
 

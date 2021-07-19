@@ -1,4 +1,5 @@
 package solver;
+import java.io.FileReader;
 import java.util.*;
 
 class RectPair {
@@ -7,18 +8,11 @@ class RectPair {
 	RectPair(Rect a, Rect b) { this.a = a; this.b = b; }
 }
 
-class BlockByPosComprator implements Comparator<Rect> {
-	public int compare(Rect a, Rect b) {
-		int a_pos = a.x*a.x + a.y*a.y;
-		int b_pos = b.x*b.x + b.y*b.y;
-		return Integer.compare(a_pos, b_pos);
-	}
-}
-
 class MondrianSolver {
 
-	static void solveByIterDeep(int n, int maxDepth, int queueSize, boolean uniformSampling) throws Exception {
-		StochasticBestFirstSearch se = new StochasticBestFirstSearch(n, queueSize, maxDepth, uniformSampling);
+	static void solve(int n, int maxDepth, int queueSize, boolean uniformSampling, int beamSize) throws Exception {
+		StochasticBestFirstSearch se = new StochasticBestFirstSearch
+				(n, queueSize, maxDepth, uniformSampling, beamSize);
 		State bestState = se.epoch();
 		System.err.println(
 			String.format("Best state: %s",
@@ -28,15 +22,24 @@ class MondrianSolver {
 	}
 
 	public static void main(String[] args) throws Exception {
-		if (args.length < 3) {
-			System.err.println("usage MondrianSolver <n> <maxdepth> <prob of exploring an infeasible/worse state>");
+		if (args.length < 2) {
+			System.err.println("usage MondrianSolver <n> <init.properties>");
 			return;
 		}
-		solveByIterDeep(
-				Integer.parseInt(args[0]),
-				Integer.parseInt(args[1]),
-				Integer.parseInt(args[2]),
-				Boolean.parseBoolean(args[3])
+
+		Properties prop = new Properties();
+		prop.load(new FileReader("init.properties"));
+		int maxDepth = Integer.parseInt(prop.getProperty("maxdepth", "10"));
+		int maxStatesToVisit = Integer.parseInt(prop.getProperty("maxstates_to_visit", "1000"));
+		int beamSize = Integer.parseInt(prop.getProperty("beamsize", "20"));
+		boolean uniformSampling = prop.getProperty("sampling", "biased").equals("uniform");
+
+		solve(
+			Integer.parseInt(args[0]),
+			maxDepth,
+			maxStatesToVisit,
+			uniformSampling,
+			beamSize
 		);
 	}
 }
