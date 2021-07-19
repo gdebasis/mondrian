@@ -1,30 +1,36 @@
 package solver;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.*;
 
 public class State implements Comparable<State> {
-    int n;
     List<Rect> blocks;
     Map<Integer, Integer> multiSetArea; // area --> freq map
     int score;
-    int maxScore;
+    int depth; // depth in the exploration tree
 
-    State(int n) { // root state with no partitions
+    // global variables to be shared across all instances
+    static int n;
+    static int maxScore;
+
+    State(int n, int depth) { // root state with no partitions
         blocks = new ArrayList<>();
-        this.n = n;
-        maxScore = n*n;
-        score = maxScore;
+        if (State.n==0) { // do it only once
+            State.n = n;
+            State.maxScore = n*n;
+        }
 
+        score = maxScore;
         Rect board = new Rect(0, 0, n, n);
         this.blocks.add(board);
         multiSetArea = new TreeMap<>();
         multiSetArea.put(score, 1);
+        this.depth = depth;
     }
 
     State(State that, Rect parent, RectPair children, boolean generatedVertically) {
-        this.n = that.n;
-        this.maxScore = that.maxScore;
-
         blocks = new ArrayList<>();
         blocks.addAll(that.blocks);
         this.multiSetArea = new HashMap<>(that.multiSetArea);
@@ -34,6 +40,7 @@ public class State implements Comparable<State> {
 
         this.removeBlock(parent);
         this.score = computeScore();
+        this.depth = that.depth+1;  // child is deeper by 1 level
     }
 
     public int compareTo(State that) {
@@ -48,7 +55,6 @@ public class State implements Comparable<State> {
         int max = multiSetArea.keySet().stream().max(Integer::compare).get();
         int min = multiSetArea.keySet().stream().min(Integer::compare).get();
 
-        //score = Collections.max(blocks).area - Collections.min(blocks).area;
         score = max-min;
         return score;
     }
@@ -72,7 +78,7 @@ public class State implements Comparable<State> {
     // Return a string signature of the multiset so that we know
     // what states to avoid exploring
     String areaMultiSet2String() {
-        return multiSetArea.keySet().toString();
+        return multiSetArea.keySet().stream().sorted().toString();
     }
 
     void addConstraintViolationPenalty() { // add penalty if applicable
@@ -148,6 +154,23 @@ public class State implements Comparable<State> {
         if (buff.length()>1) buff.deleteCharAt(buff.length()-1);
         buff.append(String.format(" (score = %d)", getScore()));
         return buff.toString();
+    }
+
+    public static void toSVG(State bestState) throws IOException {
+        String outFile = String.format("solutions/mondrian-%d-%d.htm", n, n);
+
+        FileWriter fw = new FileWriter(outFile);
+        BufferedWriter bw = new BufferedWriter(fw);
+
+        bw.write("<!DOCTYPE html>\n<html>\n<body>\n");
+        bw.write(String.format("<div>%dx%d - solution = %d: %s </div>",
+                bestState.n, bestState.n, bestState.score, bestState.blocks.toString()));
+        bw.write("<br><br>");
+
+        bw.write(bestState.toSVG(20));
+        bw.write("</body>\n</html>");
+        bw.close();
+        fw.close();
     }
 
 }
