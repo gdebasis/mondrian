@@ -3,11 +3,7 @@ package solver;
 import java.util.stream.IntStream;
 
 public class Sampler {
-    static int sample(int[] x, boolean uniform) { // x is sorted
-        if (uniform) {
-            return (int)(Math.random() * x.length);
-        }
-
+    static int sample(int[] x) { // x is sorted
         float[] probs = new float[x.length];
         int sum = IntStream.of(x).sum();
 

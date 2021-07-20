@@ -76,6 +76,14 @@ public class State implements Comparable<State> {
         }
     }
 
+    boolean isInfeasible() {
+        for (int freq: this.multiSetArea.values()) {
+            if (freq > 1)
+                return true;
+        }
+        return false;
+    }
+
     void addBlock(Rect r) { // warning: calling function needs to ensure that the block is unique
         blocks.add(r);
 

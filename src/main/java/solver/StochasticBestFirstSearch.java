@@ -24,13 +24,23 @@ public class StochasticBestFirstSearch {
     int maxScore;
     static int maxDepth;
     int numVisited;
-    boolean uniformSamping;
+    boolean uniformSampling;
+
+    static final float EPSILON = 0.1f; // prob. of including an infeasible state in the beam search
 
     int beamSize;
     static int MAX_QUEUE;
+    static int MAX_NUMVISITED;
     Map<String, State> stateQueue;
 
-    StochasticBestFirstSearch(int n, int queueSize, int maxDepth, boolean uniformSampling, int K) {
+    StochasticBestFirstSearch(int n, Properties prop) {
+
+        int maxDepth = Integer.parseInt(prop.getProperty("maxdepth", "10"));
+        MAX_QUEUE = Integer.parseInt(prop.getProperty("maxqueue_size", "1000"));
+        MAX_NUMVISITED = Integer.parseInt(prop.getProperty("maxstates_to_explore", "1000"));
+        beamSize = Integer.parseInt(prop.getProperty("beamsize", "20"));
+        uniformSampling = prop.getProperty("sampling", "biased").equals("uniform");
+
         root = new State(n, 0); // root is at depth 0
         maxScore = n*n;
         bestScore = maxScore;
@@ -38,15 +48,12 @@ public class StochasticBestFirstSearch {
         StochasticBestFirstSearch.maxDepth = maxDepth;
 
         numVisited = 0;
-        MAX_QUEUE = queueSize;
-        this.uniformSamping = uniformSampling;
-        this.beamSize = K;
     }
 
     public State epoch() { // dfs up to a specified depth
         State x, next;
         boolean[] modes = {false, true};
-        List<State> children = new ArrayList<>();
+        List<State> beam = new ArrayList<>();
 
         addState(root);
 
@@ -56,18 +63,20 @@ public class StochasticBestFirstSearch {
                 System.err.println(String.format("Visited %d states", numVisited));
                 System.err.println("#states remaining in queue " + stateQueue.size());
             }
+            if (numVisited == MAX_NUMVISITED)
+                break;
 
             x = sample(); // sample()
             if (x==null)
                 break; // no more states to sample from!
-            if (x.depth==maxDepth) {
-                System.out.println("MAX-DEPTH exceeded: Skipping state " + x.toString());
-                continue; // depth too large... select another at lower depth
-            }
 
             update(x);  // update bestState
+            if (x.depth==maxDepth) {
+                System.out.println("MAX-DEPTH exceeded: Skipping state " + x.toString());
+                continue; // depth too large... don't explore further
+            }
 
-            children.clear();
+            beam.clear();
             // Generate next states
             for (boolean mode: modes) {
                 for (Rect r : x.blocks) {
@@ -80,17 +89,22 @@ public class StochasticBestFirstSearch {
                         RectPair rp = r.split(mode, mid);
                         if (rp != null) {
                             next = new State(x, r, rp, mode);
-                            next.addConstraintViolationPenalty();
-                            children.add(next);
+                            beam.add(next);
                         }
                     }
                 }
             }
 
-            List<State> topK = children.stream()
+            List<State> topK = beam.stream()
                     .sorted()
                     .limit(beamSize)
                     .collect(Collectors.toList()); // first K - the best states
+
+            List<Integer> scores = topK.stream()
+                .map(State::getScore)
+                .collect(Collectors.toList());
+            System.out.println("Selected scores of top states: " + scores);
+
             for (State s: topK) {
                 addState(s); // add to state-queue
             }
@@ -100,6 +114,8 @@ public class StochasticBestFirstSearch {
 
         // See if any node in our queue contains a better score
         for (State s: stateQueue.values()) {
+            if (s.isInfeasible())
+                continue;
             int score = s.getScore();
             if (score < bestScore) {
                 bestScore = score;
@@ -111,6 +127,12 @@ public class StochasticBestFirstSearch {
     }
 
     void addState(State x) {
+        if (x.isInfeasible()) {
+            float p = (float)Math.random();
+            if (p > EPSILON)
+                return; // Prob. of not adding = 1-EPSILON
+        }
+
         String signature = x.areaMultiSet2String();
         State seen = stateQueue.get(signature);
         if (seen != null) {
@@ -126,7 +148,10 @@ public class StochasticBestFirstSearch {
     }
 
     void update(State x) {
-        System.out.println("Done visiting state " + x.toString());
+        if (x.isInfeasible())
+            return;
+
+        System.out.println("Done visiting a feasible state " + x.toString());
         System.out.println("State removed: " + stateQueue.remove(x.areaMultiSet2String()) + " #states = " + stateQueue.size());
 
         // update the best state
@@ -141,6 +166,12 @@ public class StochasticBestFirstSearch {
         if (stateQueue.isEmpty())
             return null;
 
+        if (uniformSampling) {
+            int size = stateQueue.size();
+            int rindex = (int)(Math.random()*size);
+            return this.stateQueue.values().stream().skip(rindex).findFirst().get();
+        }
+
         List<State> sortedStates = this.stateQueue.values().stream()
                 .sorted()
                 .limit(beamSize)
@@ -152,7 +183,7 @@ public class StochasticBestFirstSearch {
         for (State s: sortedStates)
             scores[i++] = State.maxScore - s.getScore(); // convert min to max
 
-        int sampled = Sampler.sample(scores, uniformSamping);
+        int sampled = Sampler.sample(scores);
         return sortedStates.get(sampled);
     }
 }
