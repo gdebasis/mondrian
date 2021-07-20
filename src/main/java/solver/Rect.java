@@ -1,5 +1,9 @@
 package solver;
 
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Collectors;
+
 public class Rect implements Comparable<Rect> {
     int x, y;
     int w, h;
@@ -12,6 +16,8 @@ public class Rect implements Comparable<Rect> {
         this.h = h;
         area = w*h;
     }
+
+    int getArea() { return area; }
 
     public int compareTo(Rect r) { return Integer.compare(area, r.area); }
 
@@ -39,8 +45,8 @@ public class Rect implements Comparable<Rect> {
 
     public String toString() {
         StringBuilder buff = new StringBuilder();
-        buff.append(x).append(",")
-                .append(y).append(":")
+        buff.append("(").append(x).append(", ")
+                .append(y).append(") :")
                 .append(w).append("x")
                 .append(h).append("=")
                 .append(area)
@@ -51,7 +57,7 @@ public class Rect implements Comparable<Rect> {
     public String toSVG(int k) {
         String rect_svg = String.format(
                 "<rect x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\" style=\"%s\"/>",
-                this.y*k, this.x*k, this.w*k, this.h*k, "stroke-width:1;stroke:black;fill:none");
+                this.y*k, this.x*k, this.w*k, this.h*k, "stroke-width:2;stroke:black;fill:none");
         return rect_svg;
     }
 }

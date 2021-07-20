@@ -24,5 +24,12 @@ The shell script also opens the browser with a rendering of the solution.
 
 This script works on Mac with the Chrome browser. For a different browser/OS, please change the last line of `run.sh`. 
 
-![8x8 square](sample.png)
+### Sample outputs
+
+The following are the (optimal) solutions found by the algorithm.
+
+| n=7 | n=8 | n=9 |
+|--|--|--|
+|![7x7](sample_7.png)  |![8x8](sample_8.png)  |![8x8](sample_9.png) |
+
 

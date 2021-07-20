@@ -6,9 +6,32 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+class AreaFreq {
+    int[] f; // index of the form a,b a <= b
+    int n;
+    AreaFreq(int n) {
+        this.n = n;
+        f = new int[n*n];
+    }
+
+    void update(Rect r, int delta) {
+        if (r.w < r.h)
+            f[n*(r.w-1) + r.h-1] += delta;
+        else
+            f[n*(r.h-1) + r.w-1] += delta;
+    }
+
+    int getFreq(Rect r) {
+        if (r.w < r.h)
+            return f[n*(r.w-1) + r.h-1];
+        else
+            return f[n*(r.h-1) + r.w-1];
+    }
+}
+
 public class State implements Comparable<State> {
     List<Rect> blocks;
-    Map<Integer, Integer> multiSetArea; // area --> freq map
+    AreaFreq areaFreq;
     int score;
     int depth; // depth in the exploration tree
 
@@ -17,7 +40,7 @@ public class State implements Comparable<State> {
     static int maxScore;
 
     State(int n, int depth) { // root state with no partitions
-        blocks = new ArrayList<>();
+        blocks = new ArrayList<>(n);
         if (State.n==0) { // do it only once
             State.n = n;
             State.maxScore = n*n;
@@ -26,20 +49,22 @@ public class State implements Comparable<State> {
         score = maxScore;
         Rect board = new Rect(0, 0, n, n);
         this.blocks.add(board);
-        multiSetArea = new TreeMap<>();
-        multiSetArea.put(score, 1);
+
+        areaFreq = new AreaFreq(n);
         this.depth = depth;
     }
 
-    State(State that, Rect parent, RectPair children, boolean generatedVertically) {
+    State(final State that, Rect parent, RectPair children, boolean generatedVertically) {
         blocks = new ArrayList<>();
         blocks.addAll(that.blocks);
-        this.multiSetArea = new HashMap<>(that.multiSetArea);
+
+        areaFreq = new AreaFreq(n);
+        System.arraycopy(that.areaFreq.f, 0, this.areaFreq.f, 0, n*n);
 
         this.addBlock(children.a);
         this.addBlock(children.b);
-
         this.removeBlock(parent);
+
         this.score = computeScore();
         this.depth = that.depth+1;  // child is deeper by 1 level
     }
@@ -50,11 +75,11 @@ public class State implements Comparable<State> {
 
     int getScore() { return score; }
 
-    private int computeScore() {
+    int computeScore() {
         if (blocks.size()==1) return maxScore;
 
-        int max = multiSetArea.keySet().stream().max(Integer::compare).get();
-        int min = multiSetArea.keySet().stream().min(Integer::compare).get();
+        int max = blocks.stream().map(Rect::getArea).max(Integer::compareTo).get();
+        int min = blocks.stream().map(Rect::getArea).min(Integer::compareTo).get();
 
         score = max-min;
         return score;
@@ -65,20 +90,19 @@ public class State implements Comparable<State> {
     // Return a string signature of the multiset so that we know
     // what states to avoid exploring
     String areaMultiSet2String() {
-        List<Integer> keys = multiSetArea.keySet().stream().sorted().collect(Collectors.toList());
-        return keys.toString();
+        return blocks.stream().map(Rect::getArea).sorted().toString();
+        //List<Integer> keys = multiSetArea.keySet().stream().sorted().collect(Collectors.toList());
+        //return keys.toString() + ":" + keys.size();
     }
 
     void addConstraintViolationPenalty() { // add penalty if applicable
-        for (int freq: this.multiSetArea.values()) {
-            if (freq > 1)
-                score = maxScore; // override the score to maxvalue (nxn)
-        }
+        if (isInfeasible())
+            score = maxScore;
     }
 
     boolean isInfeasible() {
-        for (int freq: this.multiSetArea.values()) {
-            if (freq > 1)
+        for (Rect r: blocks) {
+            if (areaFreq.getFreq(r) > 1)
                 return true;
         }
         return false;
@@ -86,49 +110,12 @@ public class State implements Comparable<State> {
 
     void addBlock(Rect r) { // warning: calling function needs to ensure that the block is unique
         blocks.add(r);
-
-        Integer freq = multiSetArea.get(r.area);
-        if (freq == null)
-            freq = new Integer(0);
-
-        multiSetArea.put(r.area, new Integer(freq+1));
+        areaFreq.update(r, 1);
     }
 
     void removeBlock(Rect r) {
         this.blocks.remove(r);
-        Integer freq = multiSetArea.get(r.area); // this can't be null
-        if (freq == 1)
-            multiSetArea.remove(r.area); // no redundant map of the form of area -> 0
-        else
-            multiSetArea.put(r.area, new Integer(freq-1));
-    }
-
-    // Generate all possible neighbors from a given state
-    List<State> expand() {
-        List<State> neighbors = new LinkedList<>();
-        for (Rect r: blocks) {
-            neighbors.addAll(expand(r, false));
-            neighbors.addAll(expand(r, true));
-        }
-        return neighbors;
-    }
-
-    List<State> expand(Rect r, boolean vertical) {
-        List<State> neighbors = new LinkedList<>();
-        int max = vertical? r.y + r.w : r.x + r.h;
-
-        for (int mid = 1; mid <= max/2; mid++) {
-            RectPair rp = r.split(vertical, mid);
-            // this part of the code makes sure that we always stay in the feasible solution space! Revisit later
-            if (blocks.contains(rp.a) || blocks.contains(rp.b))
-                continue;
-            if (rp.a.congruent(rp.b))
-                continue; // can't add both as they're congruent.. also makes sure that solution is feasible
-            State next = new State(this, r, rp, vertical);
-            neighbors.add(next);
-        }
-
-        return neighbors;
+        areaFreq.update(r, -1);
     }
 
     String toSVG(int SCALE_FACTOR) {
@@ -144,11 +131,15 @@ public class State implements Comparable<State> {
     }
 
     public String toString() {
-        StringBuffer buff = new StringBuffer();
-        for (Rect r: this.blocks)
-            buff.append(r.toString()).append("|");
+        List<Rect> sortedBlocks =
+            this.blocks.stream().sorted()
+            .collect(Collectors.toList());
+
+        StringBuilder buff = new StringBuilder();
+        for (Rect r: sortedBlocks)
+            buff.append(r.toString()).append(" | ");
         if (buff.length()>1) buff.deleteCharAt(buff.length()-1);
-        buff.append(String.format(" (score = %d)", getScore()));
+        buff.append(String.format(" (score = %d) (depth = %d)", getScore(), depth));
         return buff.toString();
     }
 
@@ -160,10 +151,10 @@ public class State implements Comparable<State> {
 
         bw.write("<!DOCTYPE html>\n<html>\n<body>\n");
         bw.write(String.format("<div>%dx%d - solution = %d: %s </div>",
-                bestState.n, bestState.n, bestState.score, bestState.blocks.toString()));
+                bestState.n, bestState.n, bestState.score, bestState.toString()));
         bw.write("<br><br>");
 
-        bw.write(bestState.toSVG(20));
+        bw.write(bestState.toSVG(50));
         bw.write("</body>\n</html>");
         bw.close();
         fw.close();

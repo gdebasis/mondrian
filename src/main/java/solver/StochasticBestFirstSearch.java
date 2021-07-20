@@ -60,8 +60,9 @@ public class StochasticBestFirstSearch {
         while (stateQueue.size() <= MAX_QUEUE) {
             numVisited++;
             if (numVisited %100 ==0) {
-                System.err.println(String.format("Visited %d states", numVisited));
-                System.err.println("#states remaining in queue " + stateQueue.size());
+                System.err.print(
+                    String.format("Visited %d states; #states remaining in queue: %d\r",
+                            numVisited, stateQueue.size()));
             }
             if (numVisited == MAX_NUMVISITED)
                 break;
@@ -81,11 +82,12 @@ public class StochasticBestFirstSearch {
             for (boolean mode: modes) {
                 for (Rect r : x.blocks) {
                     int max = mode ? r.y + r.w : r.x + r.h;
+                    max = max/2;
 
                     // create a new state and recursively visit that node
                     // (if the depth is less than max-depth)
                     // new state should be created vertically (if the current one is horizontal)
-                    for (int mid = 1; mid <= max/2; mid++) {
+                    for (int mid = 1; mid <= max; mid++) {
                         RectPair rp = r.split(mode, mid);
                         if (rp != null) {
                             next = new State(x, r, rp, mode);
@@ -122,12 +124,12 @@ public class StochasticBestFirstSearch {
                 bestState = s;
             }
         }
-
         return bestState;
     }
 
     void addState(State x) {
         if (x.isInfeasible()) {
+            System.out.println(String.format("State [%s] is infeasible", x.toString()));
             float p = (float)Math.random();
             if (p > EPSILON)
                 return; // Prob. of not adding = 1-EPSILON
