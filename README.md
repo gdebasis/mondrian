@@ -36,7 +36,10 @@ e.g., the solution for n=7 was obtained with
 |--|--|--|
 |![7x7](sample_7.png)  |![8x8](sample_8.png)  |![9x9](sample_9.png) |
 |score = 5 (optimal)| score = 6 (optimal) | score = 6 (optimal) |
+
+
 | n=10 | n=11 | n=23 |
+|--|--|--|
 |![10x10](sample_10.png) | ![11x11](sample_11.png) | ![23x23](sample_23.png) |
 |score = 9 (optimal = 8) | score = 9 (optimal = 6) | score = 18 (optimal = 8) |
 
