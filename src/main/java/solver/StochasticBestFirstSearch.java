@@ -27,7 +27,7 @@ public class StochasticBestFirstSearch {
     boolean uniformSamping;
 
     int beamSize;
-    static int MAX_VISITED;
+    static int MAX_QUEUE;
     Map<String, State> stateQueue;
 
     StochasticBestFirstSearch(int n, int queueSize, int maxDepth, boolean uniformSampling, int K) {
@@ -38,7 +38,7 @@ public class StochasticBestFirstSearch {
         StochasticBestFirstSearch.maxDepth = maxDepth;
 
         numVisited = 0;
-        MAX_VISITED = queueSize;
+        MAX_QUEUE = queueSize;
         this.uniformSamping = uniformSampling;
         this.beamSize = K;
     }
@@ -50,8 +50,9 @@ public class StochasticBestFirstSearch {
 
         addState(root);
 
-        while (numVisited++ <= MAX_VISITED) {
-            if (numVisited%1000==0) {
+        while (stateQueue.size() <= MAX_QUEUE) {
+            numVisited++;
+            if (numVisited %100 ==0) {
                 System.err.println(String.format("Visited %d states", numVisited));
                 System.err.println("#states remaining in queue " + stateQueue.size());
             }
@@ -59,8 +60,10 @@ public class StochasticBestFirstSearch {
             x = sample(); // sample()
             if (x==null)
                 break; // no more states to sample from!
-            if (x.depth==maxDepth)
+            if (x.depth==maxDepth) {
+                System.out.println("MAX-DEPTH exceeded: Skipping state " + x.toString());
                 continue; // depth too large... select another at lower depth
+            }
 
             update(x);  // update bestState
 
@@ -73,7 +76,7 @@ public class StochasticBestFirstSearch {
                     // create a new state and recursively visit that node
                     // (if the depth is less than max-depth)
                     // new state should be created vertically (if the current one is horizontal)
-                    for (int mid = 1; mid <= max / 2; mid++) {
+                    for (int mid = 1; mid <= max/2; mid++) {
                         RectPair rp = r.split(mode, mid);
                         if (rp != null) {
                             next = new State(x, r, rp, mode);
