@@ -135,7 +135,7 @@ public class StochasticBestFirstSearch {
                 return; // Prob. of not adding = 1-EPSILON
         }
 
-        String signature = x.areaMultiSet2String();
+        String signature = x.areaSignature();
         State seen = stateQueue.get(signature);
         if (seen != null) {
             System.out.println(
@@ -154,7 +154,7 @@ public class StochasticBestFirstSearch {
             return;
 
         System.out.println("Done visiting a feasible state " + x.toString());
-        System.out.println("State removed: " + stateQueue.remove(x.areaMultiSet2String()) + " #states = " + stateQueue.size());
+        System.out.println("State removed: " + stateQueue.remove(x.areaSignature()) + " #states = " + stateQueue.size());
 
         // update the best state
         int score = x.getScore();

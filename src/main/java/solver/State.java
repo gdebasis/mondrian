@@ -34,6 +34,7 @@ public class State implements Comparable<State> {
     AreaFreq areaFreq;
     int score;
     int depth; // depth in the exploration tree
+    TreeSet<Integer> areaSet;   // set of areas of blocks of this state -- quick equivalence check
 
     // global variables to be shared across all instances
     static int n;
@@ -50,6 +51,9 @@ public class State implements Comparable<State> {
         Rect board = new Rect(0, 0, n, n);
         this.blocks.add(board);
 
+        areaSet = new TreeSet<>();
+        areaSet.add(board.area);
+
         areaFreq = new AreaFreq(n);
         this.depth = depth;
     }
@@ -59,11 +63,16 @@ public class State implements Comparable<State> {
         blocks.addAll(that.blocks);
 
         areaFreq = new AreaFreq(n);
+        areaSet = new TreeSet<>(that.areaSet);
         System.arraycopy(that.areaFreq.f, 0, this.areaFreq.f, 0, n*n);
 
         this.addBlock(children.a);
         this.addBlock(children.b);
         this.removeBlock(parent);
+
+        areaSet.add(children.a.area);
+        areaSet.add(children.b.area);
+        areaSet.remove(parent.area);
 
         this.score = computeScore();
         this.depth = that.depth+1;  // child is deeper by 1 level
@@ -89,10 +98,8 @@ public class State implements Comparable<State> {
     // signature in terms of the multiset representation of the areas
     // Return a string signature of the multiset so that we know
     // what states to avoid exploring
-    String areaMultiSet2String() {
-        return blocks.stream().map(Rect::getArea).sorted().toString();
-        //List<Integer> keys = multiSetArea.keySet().stream().sorted().collect(Collectors.toList());
-        //return keys.toString() + ":" + keys.size();
+    String areaSignature() {
+        return areaSet.toString();
     }
 
     void addConstraintViolationPenalty() { // add penalty if applicable

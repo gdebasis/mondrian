@@ -4,7 +4,6 @@ import java.util.*;
 
 class RectPair {
 	Rect a, b;
-
 	RectPair(Rect a, Rect b) { this.a = a; this.b = b; }
 }
 
