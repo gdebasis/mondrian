@@ -7,25 +7,35 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 class AreaFreq {
-    int[] f; // index of the form a,b a <= b
-    int n;
-    AreaFreq(int n) {
-        this.n = n;
-        f = new int[n*n];
+    HashMap<String, Integer> map;
+
+    AreaFreq() {
+        map = new HashMap<>();
     }
 
+    AreaFreq(AreaFreq that) {
+        map = new HashMap<>(that.map);
+    }
+
+    String key(Rect r) { return r.w < r.h ? r.w + ":" + r.h: r.h + ":" + r.w; }
+
     void update(Rect r, int delta) {
-        if (r.w < r.h)
-            f[n*(r.w-1) + r.h-1] += delta;
+        String key = key(r);
+        Integer c = map.get(key);
+        if (c==null)
+            c = new Integer(0);
+
+        c += delta;
+        if (c > 0)
+            map.put(key, c);
         else
-            f[n*(r.h-1) + r.w-1] += delta;
+            map.remove(key);
     }
 
     int getFreq(Rect r) {
-        if (r.w < r.h)
-            return f[n*(r.w-1) + r.h-1];
-        else
-            return f[n*(r.h-1) + r.w-1];
+        String key = key(r);
+        Integer c = map.get(key);
+        return (c==null)? 0: c;
     }
 }
 
@@ -54,7 +64,7 @@ public class State implements Comparable<State> {
         areaSet = new TreeSet<>();
         areaSet.add(board.area);
 
-        areaFreq = new AreaFreq(n);
+        areaFreq = new AreaFreq();
         this.depth = depth;
     }
 
@@ -62,9 +72,8 @@ public class State implements Comparable<State> {
         blocks = new ArrayList<>();
         blocks.addAll(that.blocks);
 
-        areaFreq = new AreaFreq(n);
+        areaFreq = new AreaFreq(that.areaFreq);
         areaSet = new TreeSet<>(that.areaSet);
-        System.arraycopy(that.areaFreq.f, 0, this.areaFreq.f, 0, n*n);
 
         this.addBlock(children.a);
         this.addBlock(children.b);
