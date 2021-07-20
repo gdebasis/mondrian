@@ -79,7 +79,8 @@ public class State implements Comparable<State> {
     }
 
     public int compareTo(State that) {
-        return Integer.compare(this.getScore(), that.getScore());
+        int c = Integer.compare(this.getScore(), that.getScore());
+        return c!=0? c: -1 * Integer.compare(this.depth, that.depth); // favour a higher depth
     }
 
     int getScore() { return score; }
