@@ -1,6 +1,7 @@
+
 ## Mondrian Solver
 
-A Java implementation of stochastic beam search to solve the Mondrian puzzle (work in progress). In contrast to existing approaches of solving this employs a state-space search based approach.
+A Java implementation of stochastic beam search to solve the [Mondrian puzzle](https://mondrianpuzzle.appspot.com/index.html) (work in progress). In contrast to existing approaches of solving this employs a state-space search based approach.
 In particular, we apply a stochastic beam search.   
 
 To build the project install `maven` and execute
@@ -42,6 +43,7 @@ e.g., the solution for n=7 was obtained with
 |--|--|--|
 |![10x10](sample_10.png) | ![11x11](sample_11.png) | ![23x23](sample_23.png) |
 |score = 9 (optimal = 8) | score = 9 (optimal = 6) | score = 18 (optimal = 8) |
+
 
 
 
