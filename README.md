@@ -39,9 +39,9 @@ e.g., the solution for n=7 was obtained with
 |score = 5 (optimal)| score = 6 (optimal) | score = 6 (optimal) |
 
 
-| n=10 | n=11 | n=23 |
+| n=10 | n=11 | n=12 |
 |--|--|--|
-|![10x10](images/sample_10.png) | ![11x11](images/sample_11.png) | ![23x23](images/sample_12.png) |
+|![10x10](images/sample_10.png) | ![11x11](images/sample_11.png) | ![12x12](images/sample_12.png) |
 |score = 9 (optimal = 8) | score = 9 (optimal = 6) | score = 8 (optimal = 7) |
 
 
