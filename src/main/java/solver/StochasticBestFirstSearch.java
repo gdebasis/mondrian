@@ -90,7 +90,7 @@ public class StochasticBestFirstSearch {
                     for (int mid = 1; mid <= max; mid++) {
                         RectPair rp = r.split(mode, mid);
                         if (rp != null) {
-                            next = new State(x, r, rp, mode);
+                            next = new State(x, r, rp);
                             beam.add(next);
                         }
                     }

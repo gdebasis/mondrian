@@ -68,7 +68,7 @@ public class State implements Comparable<State> {
         this.depth = depth;
     }
 
-    State(final State that, Rect parent, RectPair children, boolean generatedVertically) {
+    State(final State that, Rect parent, RectPair children) {
         blocks = new ArrayList<>();
         blocks.addAll(that.blocks);
 
