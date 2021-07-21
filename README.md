@@ -35,14 +35,14 @@ e.g., the solution for n=7 was obtained with
 
 | n=7 | n=8 | n=9 |
 |--|--|--|
-|![7x7](sample_7.png)  |![8x8](sample_8.png)  |![9x9](sample_9.png) |
+|![7x7](images/sample_7.png)  |![8x8](images/sample_8.png)  |![9x9](images/sample_9.png) |
 |score = 5 (optimal)| score = 6 (optimal) | score = 6 (optimal) |
 
 
 | n=10 | n=11 | n=23 |
 |--|--|--|
-|![10x10](sample_10.png) | ![11x11](sample_11.png) | ![23x23](sample_23.png) |
-|score = 9 (optimal = 8) | score = 9 (optimal = 6) | score = 18 (optimal = 8) |
+|![10x10](images/sample_10.png) | ![11x11](images/sample_11.png) | ![23x23](images/sample_12.png) |
+|score = 9 (optimal = 8) | score = 9 (optimal = 6) | score = 8 (optimal = 7) |
 
 
 
