@@ -139,8 +139,17 @@ public class State implements Comparable<State> {
         StringBuffer buff = new StringBuffer();
         buff.append(String.format("<svg width=\"%d\" height=\"%d\">\n", n*SCALE_FACTOR, n*SCALE_FACTOR));
 
+        List<Rect> grid = new ArrayList<>(n*n);
+        for (int i=0; i<n; i++) {
+            for (int j=0; j<n; j++) {
+                grid.add(new Rect(i, j, 1, 1));
+            }
+        }
+        for (Rect r: grid)
+            buff.append(r.toSVG(SCALE_FACTOR, 1, "black")).append("\n");
+
         for (Rect r: blocks)
-            buff.append(r.toSVG(SCALE_FACTOR)).append("\n");
+            buff.append(r.toSVG(SCALE_FACTOR, 3, "black")).append("\n");
 
         buff.append("</svg>");
 

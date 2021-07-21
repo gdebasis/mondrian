@@ -54,10 +54,10 @@ public class Rect implements Comparable<Rect> {
         return buff.toString();
     }
 
-    public String toSVG(int k) {
+    public String toSVG(int k, int stroke_width, String colorName) {
         String rect_svg = String.format(
-                "<rect x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\" style=\"%s\"/>",
-                this.y*k, this.x*k, this.w*k, this.h*k, "stroke-width:2;stroke:black;fill:none");
+                "<rect x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\" style=\"stroke-width:%d;stroke:%s;fill:none\"/>",
+                this.y*k, this.x*k, this.w*k, this.h*k, stroke_width, colorName);
         return rect_svg;
     }
 }
