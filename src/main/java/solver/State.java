@@ -68,19 +68,21 @@ public class State implements Comparable<State> {
         this.depth = depth;
     }
 
-    State(final State that, Rect parent, RectPair children) {
+    State(final State that, Rect parent, List<Rect> children) {
         blocks = new ArrayList<>();
         blocks.addAll(that.blocks);
 
         areaFreq = new AreaFreq(that.areaFreq);
         areaSet = new TreeSet<>(that.areaSet);
 
-        this.addBlock(children.a);
-        this.addBlock(children.b);
+        for (Rect child: children)
+            this.addBlock(child);
+
         this.removeBlock(parent);
 
-        areaSet.add(children.a.area);
-        areaSet.add(children.b.area);
+        for (Rect child: children)
+            areaSet.add(child.area);
+
         areaSet.remove(parent.area);
 
         this.score = computeScore();
@@ -169,6 +171,12 @@ public class State implements Comparable<State> {
         return buff.toString();
     }
 
+    float compositeHeuristicScore() {
+        // a high numFactors will bring this ratio down which is desirable
+        // because the sample() function works by selecting the first-K values
+        return this.score/FactorsHeuristic.avgNumFactors(this);
+    }
+
     public static void toSVG(State bestState) throws IOException {
         String outFile = String.format("solutions/mondrian-%d-%d.htm", n, n);
 
@@ -184,10 +192,6 @@ public class State implements Comparable<State> {
         bw.write("</body>\n</html>");
         bw.close();
         fw.close();
-    }
-
-    public int A_star_Heuristic() { // higher the better
-        return StochasticBestFirstSearch.maxDepth - depth + blocks.size();
     }
 }
 

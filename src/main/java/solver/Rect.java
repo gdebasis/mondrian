@@ -1,11 +1,12 @@
 package solver;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class Rect implements Comparable<Rect> {
-    int x, y;
+    int x, y;  // (row, col)
     int w, h;
     int area;
 
@@ -17,6 +18,10 @@ public class Rect implements Comparable<Rect> {
         area = w*h;
     }
 
+    boolean isValid() {
+        return x>=0 && y>=0 && w>0 && h>0;
+    }
+
     int getArea() { return area; }
 
     public int compareTo(Rect r) { return Integer.compare(area, r.area); }
@@ -25,8 +30,9 @@ public class Rect implements Comparable<Rect> {
         return this.w+this.h == that.w+that.h && this.w*this.h == that.w*that.h;
     }
 
-    RectPair split(boolean vertical, int cut) {
+    public List<Rect> biSectionSplit(boolean vertical, int cut) {
         Rect a, b;
+        List<Rect> children = new ArrayList<>(2);
 
         if (w-cut<=0 || h-cut<=0)
             return null;
@@ -39,8 +45,29 @@ public class Rect implements Comparable<Rect> {
             a = new Rect(x, y, w, cut);
             b = new Rect(x+cut, y, w, h-cut);
         }
+        children.add(a);
+        children.add(b);
 
-        return new RectPair(a, b);
+        return children;
+    }
+
+    public List<Rect> spiralSplit(int xt, int xb, int yl, int yr) { // pivot is a subrectangle
+        Rect pivot = new Rect(xt, yl, yr-yl, xb-xt);
+        if (!pivot.isValid())
+            return null;
+
+        RectQuadruple quadruple = new RectQuadruple(this, pivot);
+        if (!quadruple.isValid())
+            return null;
+
+        List<Rect> children = new ArrayList<>(4);
+        children.add(quadruple.t);
+        children.add(quadruple.l);
+        children.add(quadruple.b);
+        children.add(quadruple.r);
+        children.add(pivot);
+
+        return children;
     }
 
     public String toString() {

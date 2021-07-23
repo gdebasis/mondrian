@@ -1,11 +1,9 @@
 package solver;
+import java.io.BufferedWriter;
 import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.*;
-
-class RectPair {
-	Rect a, b;
-	RectPair(Rect a, Rect b) { this.a = a; this.b = b; }
-}
 
 class MondrianSolver {
 
@@ -16,7 +14,7 @@ class MondrianSolver {
 		}
 
 		Properties prop = new Properties();
-		prop.load(new FileReader("init.properties"));
+		prop.load(new FileReader(args[1]));
 
 		StochasticBestFirstSearch se = new StochasticBestFirstSearch(Integer.parseInt(args[0]), prop);
 
