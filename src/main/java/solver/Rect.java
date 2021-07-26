@@ -31,6 +31,11 @@ public class Rect implements Comparable<Rect> {
         return reflected;
     }
 
+    Rect getRotated() { // transpose
+        Rect rotated = new Rect(y, x, h, w);
+        return rotated;
+    }
+
     public int compareTo(Rect r) { return Integer.compare(area, r.area); }
 
     public boolean congruent(Rect that) {

@@ -23,6 +23,7 @@ class MondrianSolver {
 				String.format("Best state: %s",
 						bestState.toString())
 		);
-		State.toSVG(bestState);
+		boolean toColor = Boolean.parseBoolean(prop.getProperty("color", "false"));
+		State.toSVG(bestState, toColor);
 	}
 }

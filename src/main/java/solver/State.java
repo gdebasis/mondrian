@@ -156,11 +156,18 @@ public class State implements Comparable<State> {
     }
 
     String toSVG(int SCALE_FACTOR) {
+        return toSVG(SCALE_FACTOR, false);
+    }
+
+    String toSVG(int SCALE_FACTOR, boolean color) {
         StringBuffer buff = new StringBuffer();
         buff.append(String.format("<svg width=\"%d\" height=\"%d\">\n", n*SCALE_FACTOR, n*SCALE_FACTOR));
 
-        for (Rect r: blocks)
-            buff.append(r.toSVGColor(SCALE_FACTOR, 3, "black")).append("\n");
+        for (Rect r : blocks)
+            buff.append(
+                color && r.x>0 && r.y>0? r.toSVGColor(SCALE_FACTOR, 3, "black"):
+                        r.toSVG(SCALE_FACTOR, 3, "black")
+                ).append("\n");
 
         List<Rect> grid = new ArrayList<>(n*n);
         for (int i=0; i<n; i++) {
@@ -172,7 +179,6 @@ public class State implements Comparable<State> {
             buff.append(r.toSVG(SCALE_FACTOR, 1, "black")).append("\n");
 
         buff.append("</svg>");
-
         return buff.toString();
     }
 
@@ -195,29 +201,58 @@ public class State implements Comparable<State> {
         return this.score/FactorsHeuristic.avgNumFactors(this);
     }
 
-    static List<State> mergeAllHorizontally(final State s, int i, Direction d) {
+    public static List<State> mergeAll(final State s, int i) { // ith rect is the pivot
+        State s_dash = null;
         List<State> mergedStates = new LinkedList<>();
-        State s_dash = s;
 
-        if (d == Direction.LEFT) {
-            s_dash = s.reflectHorizontally();
+        for (Direction d: Direction.values()) {
+            if (d==Direction.RIGHT)
+                s_dash = s;
+            else if (d==Direction.LEFT)
+                s_dash = s.reflectHorizontally();
+            else if (d==Direction.TOP)
+                s_dash = s.rotate(true);
+            else if (d==Direction.BOTTOM)
+                s_dash = s.rotate(false);
+
+            mergedStates.addAll(mergeAllAlongRight(s_dash, i));
         }
-        final Rect key = s_dash.blocks.get(i);
+        // No need to reflect/rotate back because states are equivalent
+        return mergedStates;
+    }
 
-        List<Rect> adjRects = s_dash.blocks
+    // Merge along right... to merge along other directions the input is transformed
+    static List<State> mergeAllAlongRight(final State s, int i) {
+        List<State> mergedStates = new LinkedList<>();
+        final Rect key = s.blocks.get(i);
+
+        List<Rect> adjRects = s.blocks
                 .stream()
                 .filter(p -> p.y==key.y+key.w)  // only those rectangles that 'touch' the key
                 .collect(Collectors.toList())
                 ;
 
         for (Rect q: adjRects) {
-            mergedStates.add(mergeWithRight(s_dash, key, q));
-        }
-
-        if (d == Direction.LEFT) { // reflect back
-            mergedStates = mergedStates.stream().map(State::reflectHorizontally).collect(Collectors.toList());
+            mergedStates.add(mergeAlongRight(s, key, q));
         }
         return mergedStates;
+    }
+
+    State rotate(boolean antiClockwise) {  // top===right, bottom===left
+        State s = new State(State.n, this.depth);
+        s.blocks.clear();
+
+        for (Rect r: this.blocks) {
+            if (antiClockwise)
+                s.blocks.add(r.getReflectedHorizontally().getRotated());
+            else
+                s.blocks.add(r.getRotated().getReflectedHorizontally());
+        }
+
+        s.areaFreq = this.areaFreq;
+        s.score = this.score;
+        s.areaSet = this.areaSet;
+        return s;
     }
 
     State reflectHorizontally() {
@@ -234,7 +269,7 @@ public class State implements Comparable<State> {
         return s;
     }
 
-    static State mergeWithRight(State s, Rect key, Rect q) {
+    static State mergeAlongRight(State s, Rect key, Rect q) {
         List<Rect> mergedRects = new ArrayList<>(s.blocks); // copy the existing rectangles
 
         mergedRects.remove(q);
@@ -269,7 +304,7 @@ public class State implements Comparable<State> {
         return newState;
     }
 
-    public static void toSVG(State bestState) throws IOException {
+    public static void toSVG(State bestState, boolean color) throws IOException {
         final int MAX = 600;
         String outFile = String.format("solutions/mondrian-%d-%d.htm", n, n);
 
@@ -277,11 +312,11 @@ public class State implements Comparable<State> {
         BufferedWriter bw = new BufferedWriter(fw);
 
         bw.write("<!DOCTYPE html>\n<html>\n<body>\n");
-        bw.write(String.format("<div>%dx%d - solution = %d: %s </div>",
-                bestState.n, bestState.n, bestState.score, bestState.toString()));
+        bw.write(String.format("<div>%dx%d solution: Score = %d, #Rectangles = %d</div>",
+                bestState.n, bestState.n, bestState.score, bestState.blocks.size()));
         bw.write("<br><br>");
 
-        bw.write(bestState.toSVG(MAX/n));
+        bw.write(bestState.toSVG(MAX/n, color));
         bw.write("</body>\n</html>");
         bw.close();
         fw.close();
@@ -327,7 +362,7 @@ public class State implements Comparable<State> {
         bw.write("<!DOCTYPE html>\n<html>\n<body>\n");
         bw.write(String.format("<svg width=\"%d\" height=\"%d\">\n", State.n*SCALE_FACTOR, State.n*SCALE_FACTOR));
 
-        List<State> mergedStates = mergeAllHorizontally(s, p, Direction.LEFT);
+        List<State> mergedStates = mergeAllAlongRight(s, p);
         State merged = mergedStates.get(2);
 
         for (Rect x: merged.blocks) {

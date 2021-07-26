@@ -13,6 +13,7 @@ public class StochasticBestFirstSearch {
 
     boolean uniformSampling;
     boolean spiralSplit;
+    boolean toMerge;
 
     static final boolean DEBUG = true;
     static final float EPSILON = 0.1f; // prob. of including an infeasible state in the beam search
@@ -38,6 +39,7 @@ public class StochasticBestFirstSearch {
 
         numVisited = 0;
         spiralSplit = Boolean.parseBoolean(prop.getProperty("gen.spiral", "false"));
+        toMerge = Boolean.parseBoolean(prop.getProperty("gen.merge", "false"));
     }
 
     // beam is an o/p parameter
@@ -106,11 +108,11 @@ public class StochasticBestFirstSearch {
 
         while (stateQueue.size() <= MAX_QUEUE) {
             numVisited++;
-            if (numVisited %100 ==0) {
+            if (numVisited%10==0)
                 System.err.print(
                     String.format("Visited %d states; #states remaining in queue: %d\r",
-                            numVisited, stateQueue.size()));
-            }
+                        numVisited, stateQueue.size()));
+
             if (numVisited == MAX_NUMVISITED)
                 break;
 
@@ -127,17 +129,28 @@ public class StochasticBestFirstSearch {
             beam.clear();
 
             genNextStatesByBisection(x, beam);
+
             if (spiralSplit) {
+                System.out.println("Generating spiral transformation states...");
                 List<State> spiralTransformedStates = new LinkedList<>();
                 for (State y: beam) {
                     spiralTransformedStates.addAll(genNextStatesBySpiralEnclosure(y)); // add more states
                 }
                 beam.addAll(spiralTransformedStates);
 
-                spiralSplit = false; // do this only once; computationally expensivee
+                spiralSplit = false; // do this only once; computationally expensive
             }
 
-            // favour states where the areas are highly composite numbers
+            // Generate all merged states
+            if (toMerge) {
+                System.out.println("Generating merged states...");
+                for (int i = 0; i < x.blocks.size(); i++) {
+                    beam.addAll(State.mergeAll(x, i));
+                }
+            }
+
+            System.out.println("Total states to select from: " + beam.size());
+            // favour states where the areas are highly composite numbers -- not too useful... removed
             List<State> topK = beam.stream()
                     //.sorted(new FactorsHeuristic())
                     .sorted()
@@ -149,13 +162,9 @@ public class StochasticBestFirstSearch {
                         .map(State::getScore)
                         .collect(Collectors.toList());
                 System.out.println("Selected scores of top states: " + scores);
-
-                List<Float> heuristicScores = topK.stream()
-                        .map(State::compositeHeuristicScore)
-                        .collect(Collectors.toList());
-                System.out.println("Selected scores of top states: " + heuristicScores);
             }
 
+            System.out.println("Adding states to queue...");
             for (State s: topK) {
                 addState(s); // add to state-queue
             }
