@@ -165,7 +165,7 @@ public class State implements Comparable<State> {
 
         for (Rect r : blocks)
             buff.append(
-                color && r.x>0 && r.y>0? r.toSVGColor(SCALE_FACTOR, 3, "black"):
+                color && r.x>0 || r.y>0? r.toSVGColor(SCALE_FACTOR, 5, "black"):
                         r.toSVG(SCALE_FACTOR, 3, "black")
                 ).append("\n");
 

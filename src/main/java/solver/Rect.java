@@ -10,7 +10,8 @@ public class Rect implements Comparable<Rect> {
     int w, h;
     int area;
 
-    static String[] fillStyles = {"none", "gray", "red", "none", "blue", "none", "yellow"};
+    static String[] fillStyles = {"gray", "red", "blue", "yellow"};
+    static int numColors = fillStyles.length;
 
     Rect(int x, int y, int w, int h) {
         this.x = x;
@@ -100,11 +101,21 @@ public class Rect implements Comparable<Rect> {
         return rect_svg;
     }
 
+    String selectRandomColor() {
+        if (numColors<=0) return "none";
+
+        int i = (int)(Math.random()* numColors);
+        String tmp = fillStyles[i];
+        fillStyles[i] = fillStyles[numColors-1];
+        fillStyles[numColors-1] = tmp;
+        numColors--;
+        return tmp;
+    }
+
     public String toSVGColor(int k, int stroke_width, String colorName) {
-        int i = (int)(Math.random()* fillStyles.length);
         String rect_svg = String.format(
                 "<rect x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\" style=\"stroke-width:%d;stroke:%s;fill:%s\"/>",
-                this.y*k, this.x*k, this.w*k, this.h*k, stroke_width, colorName, fillStyles[i]);
+                this.y*k, this.x*k, this.w*k, this.h*k, stroke_width, colorName, selectRandomColor());
         return rect_svg;
     }
 
