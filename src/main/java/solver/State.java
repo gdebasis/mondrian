@@ -6,8 +6,10 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static java.lang.Math.*;
+
 class AreaFreq {
-    HashMap<String, Integer> map;
+    HashMap<String, Integer> map; // w:h --> freq (>1 implies infeasible state)
 
     AreaFreq() {
         map = new HashMap<>();
@@ -17,10 +19,15 @@ class AreaFreq {
         map = new HashMap<>(that.map);
     }
 
-    String key(Rect r) { return r.w < r.h ? r.w + ":" + r.h: r.h + ":" + r.w; }
+    AreaFreq(List<Rect> rects) {
+        this();
+        for (Rect r: rects) {
+            update(r, 1);
+        }
+    }
 
     void update(Rect r, int delta) {
-        String key = key(r);
+        String key = r.key();
         Integer c = map.get(key);
         if (c==null)
             c = new Integer(0);
@@ -33,7 +40,7 @@ class AreaFreq {
     }
 
     int getFreq(Rect r) {
-        String key = key(r);
+        String key = r.key();
         Integer c = map.get(key);
         return (c==null)? 0: c;
     }
@@ -44,7 +51,9 @@ public class State implements Comparable<State> {
     AreaFreq areaFreq;
     int score;
     int depth; // depth in the exploration tree
-    TreeSet<Integer> areaSet;   // set of areas of blocks of this state -- quick equivalence check
+    Set<Integer> areaSet;   // set of areas of blocks of this state -- quick equivalence check
+
+    enum Direction { RIGHT, LEFT, TOP, BOTTOM};
 
     // global variables to be shared across all instances
     static int n;
@@ -66,6 +75,15 @@ public class State implements Comparable<State> {
 
         areaFreq = new AreaFreq();
         this.depth = depth;
+    }
+
+    State(final State that, final List<Rect> blocks) {
+        this.blocks = blocks;
+        areaSet = blocks.stream().map(Rect::getArea).distinct().collect(Collectors.toSet());
+        areaFreq = new AreaFreq(blocks);
+
+        this.score = computeScore();
+        this.depth = that.depth+1;  // child is deeper by 1 level
     }
 
     State(final State that, Rect parent, List<Rect> children) {
@@ -141,6 +159,9 @@ public class State implements Comparable<State> {
         StringBuffer buff = new StringBuffer();
         buff.append(String.format("<svg width=\"%d\" height=\"%d\">\n", n*SCALE_FACTOR, n*SCALE_FACTOR));
 
+        for (Rect r: blocks)
+            buff.append(r.toSVGColor(SCALE_FACTOR, 3, "black")).append("\n");
+
         List<Rect> grid = new ArrayList<>(n*n);
         for (int i=0; i<n; i++) {
             for (int j=0; j<n; j++) {
@@ -149,9 +170,6 @@ public class State implements Comparable<State> {
         }
         for (Rect r: grid)
             buff.append(r.toSVG(SCALE_FACTOR, 1, "black")).append("\n");
-
-        for (Rect r: blocks)
-            buff.append(r.toSVG(SCALE_FACTOR, 3, "black")).append("\n");
 
         buff.append("</svg>");
 
@@ -177,7 +195,82 @@ public class State implements Comparable<State> {
         return this.score/FactorsHeuristic.avgNumFactors(this);
     }
 
+    static List<State> mergeAllHorizontally(final State s, int i, Direction d) {
+        List<State> mergedStates = new LinkedList<>();
+        State s_dash = s;
+
+        if (d == Direction.LEFT) {
+            s_dash = s.reflectHorizontally();
+        }
+        final Rect key = s_dash.blocks.get(i);
+
+        List<Rect> adjRects = s_dash.blocks
+                .stream()
+                .filter(p -> p.y==key.y+key.w)  // only those rectangles that 'touch' the key
+                .collect(Collectors.toList())
+                ;
+
+        for (Rect q: adjRects) {
+            mergedStates.add(mergeWithRight(s_dash, key, q));
+        }
+
+        if (d == Direction.LEFT) { // reflect back
+            mergedStates = mergedStates.stream().map(State::reflectHorizontally).collect(Collectors.toList());
+        }
+        return mergedStates;
+    }
+
+    State reflectHorizontally() {
+        State s = new State(State.n, this.depth);
+        s.blocks.clear();
+
+        for (Rect r: this.blocks) {
+            s.blocks.add(r.getReflectedHorizontally());
+        }
+
+        s.areaFreq = this.areaFreq;
+        s.score = this.score;
+        s.areaSet = this.areaSet;
+        return s;
+    }
+
+    static State mergeWithRight(State s, Rect key, Rect q) {
+        List<Rect> mergedRects = new ArrayList<>(s.blocks); // copy the existing rectangles
+
+        mergedRects.remove(q);
+        mergedRects.remove(key);
+
+        int newRect_x_start, newRect_x_end;
+        Rect key_top = null, q_top = null, q_bottom = null, key_bottom = null;
+
+        newRect_x_start = max(q.x, key.x);
+        newRect_x_end = min(q.x+q.h, key.x+key.h);
+        Rect newRect = new Rect(newRect_x_start, key.y, key.w + q.w, newRect_x_end - newRect_x_start);
+        mergedRects.add(newRect);
+
+        if (newRect_x_start > key.x) {
+            key_top = new Rect(key.x, key.y, key.w, newRect_x_start-key.x);
+            mergedRects.add(key_top);
+        }
+        else {
+            q_top = new Rect(q.x, q.y, q.w, newRect_x_start-q.x);
+            mergedRects.add(q_top);
+        }
+        if (newRect_x_end < q.x+q.h) {
+            q_bottom = new Rect(newRect_x_end, q.y, q.w, q.x+q.h-newRect_x_end);
+            mergedRects.add(q_bottom);
+        }
+        else {
+            key_bottom = new Rect(newRect_x_end, key.y, key.w, key.x+key.h-newRect_x_end);
+            mergedRects.add(key_bottom);
+        }
+
+        State newState = new State(s, mergedRects);
+        return newState;
+    }
+
     public static void toSVG(State bestState) throws IOException {
+        final int MAX = 600;
         String outFile = String.format("solutions/mondrian-%d-%d.htm", n, n);
 
         FileWriter fw = new FileWriter(outFile);
@@ -188,8 +281,62 @@ public class State implements Comparable<State> {
                 bestState.n, bestState.n, bestState.score, bestState.toString()));
         bw.write("<br><br>");
 
-        bw.write(bestState.toSVG(50));
+        bw.write(bestState.toSVG(MAX/n));
         bw.write("</body>\n</html>");
+        bw.close();
+        fw.close();
+    }
+
+    public static void main(String[] args) throws IOException {
+        int SCALE_FACTOR = 20;
+        FileWriter fw;
+        BufferedWriter bw;
+
+        fw = new FileWriter("beforemerge.htm");
+        bw = new BufferedWriter(fw);
+        bw.write("<!DOCTYPE html>\n<html>\n<body>\n");
+
+        State s = new State(7, 0);
+        s.blocks.clear();
+        int p = 4;
+
+        s.blocks.add(new Rect(0, 0, 6, 2));
+        s.blocks.add(new Rect(2, 0, 4, 2));
+        s.blocks.add(new Rect(4, 0, 4, 1));
+        s.blocks.add(new Rect(5, 0, 4, 2));
+        s.blocks.add(new Rect(2, 4, 2, 5));
+        s.blocks.add(new Rect(0, 6, 1, 3));
+        s.blocks.add(new Rect(3, 6, 1, 1));
+        s.blocks.add(new Rect(4, 6, 1, 3));
+
+        System.out.println(s.blocks);
+        bw.write(String.format("<svg width=\"%d\" height=\"%d\">\n", State.n*SCALE_FACTOR, State.n*SCALE_FACTOR));
+
+        State s_ref = s.reflectHorizontally();
+        for (Rect x: s.blocks) {
+            bw.write(x.toSVG(SCALE_FACTOR, 1, "black"));
+            bw.newLine();
+        }
+
+        bw.write("</svg></body>\n</html>");
+        bw.close();
+        fw.close();
+
+        fw = new FileWriter("aftermerge.htm");
+        bw = new BufferedWriter(fw);
+        bw.write("<!DOCTYPE html>\n<html>\n<body>\n");
+        bw.write(String.format("<svg width=\"%d\" height=\"%d\">\n", State.n*SCALE_FACTOR, State.n*SCALE_FACTOR));
+
+        List<State> mergedStates = mergeAllHorizontally(s, p, Direction.LEFT);
+        State merged = mergedStates.get(2);
+
+        for (Rect x: merged.blocks) {
+            bw.write(x.toSVG(SCALE_FACTOR, 1, "black"));
+            bw.newLine();
+        }
+        System.out.println(merged.blocks);
+
+        bw.write("</svg></body>\n</html>");
         bw.close();
         fw.close();
     }

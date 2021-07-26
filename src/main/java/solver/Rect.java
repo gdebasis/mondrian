@@ -10,6 +10,8 @@ public class Rect implements Comparable<Rect> {
     int w, h;
     int area;
 
+    static String[] fillStyles = {"none", "gray", "red", "none", "blue", "none", "yellow"};
+
     Rect(int x, int y, int w, int h) {
         this.x = x;
         this.y = y;
@@ -23,6 +25,11 @@ public class Rect implements Comparable<Rect> {
     }
 
     int getArea() { return area; }
+
+    Rect getReflectedHorizontally() {
+        Rect reflected = new Rect(x, State.n - (y + w), w, h);
+        return reflected;
+    }
 
     public int compareTo(Rect r) { return Integer.compare(area, r.area); }
 
@@ -87,6 +94,24 @@ public class Rect implements Comparable<Rect> {
                 this.y*k, this.x*k, this.w*k, this.h*k, stroke_width, colorName);
         return rect_svg;
     }
+
+    public String toSVGColor(int k, int stroke_width, String colorName) {
+        int i = (int)(Math.random()* fillStyles.length);
+        String rect_svg = String.format(
+                "<rect x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\" style=\"stroke-width:%d;stroke:%s;fill:%s\"/>",
+                this.y*k, this.x*k, this.w*k, this.h*k, stroke_width, colorName, fillStyles[i]);
+        return rect_svg;
+    }
+
+    public String toSVGColor(int k, int stroke_width, String colorName, String fillColor) {
+        String rect_svg = String.format(
+                "<rect x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\" style=\"stroke-width:%d;stroke:%s;fill:%s\"/>",
+                this.y*k, this.x*k, this.w*k, this.h*k, stroke_width, colorName, fillColor);
+        return rect_svg;
+    }
+
+
+    public String key() { return w < h ? w + ":" + h: h + ":" + w; }
 }
 
 

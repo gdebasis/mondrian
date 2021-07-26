@@ -79,9 +79,12 @@ public class RectQuadruple {
         fw.close();
     }
 
-    public static void main(String[] args) throws IOException {
-        testBisectionSplit();
-        testSpiralSplit();
+    public static void main(String[] args) {
+        try {
+            testBisectionSplit();
+            testSpiralSplit();
+        }
+        catch (IOException ex) { ex.printStackTrace(); }
     }
 }
 
