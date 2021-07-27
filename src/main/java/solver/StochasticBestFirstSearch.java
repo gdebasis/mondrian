@@ -14,6 +14,8 @@ public class StochasticBestFirstSearch {
     boolean uniformSampling;
     boolean spiralSplit;
     boolean toMerge;
+    int mergeMinDepth;
+    int spiralMaxDepth;
 
     static final boolean DEBUG = true;
     static final float EPSILON = 0.1f; // prob. of including an infeasible state in the beam search
@@ -40,12 +42,20 @@ public class StochasticBestFirstSearch {
         numVisited = 0;
         spiralSplit = Boolean.parseBoolean(prop.getProperty("gen.spiral", "false"));
         toMerge = Boolean.parseBoolean(prop.getProperty("gen.merge", "false"));
+        mergeMinDepth = Integer.parseInt(prop.getProperty("merge.mindepth", "4"));
+        spiralMaxDepth = Integer.parseInt(prop.getProperty("spiral.maxdepth", "2"));
     }
 
     // beam is an o/p parameter
     void genNextStatesByBisection(State x, List<State> beam) {
         State next;
         boolean[] modes = {false, true};
+
+        if (x.blocks.isEmpty()) {
+            x.blocks.add(new Rect(0, 0, State.n, State.n));
+            x.areaSet.add(State.maxScore);
+        }
+
         // Generate next states
         for (boolean mode: modes) {
             for (Rect r : x.blocks) {
@@ -130,22 +140,19 @@ public class StochasticBestFirstSearch {
 
             genNextStatesByBisection(x, beam);
 
-            if (spiralSplit) {
+            if (spiralSplit && x.depth < spiralMaxDepth) {
                 System.out.println("Generating spiral transformation states...");
-                List<State> spiralTransformedStates = new LinkedList<>();
-                for (State y: beam) {
-                    spiralTransformedStates.addAll(genNextStatesBySpiralEnclosure(y)); // add more states
-                }
-                beam.addAll(spiralTransformedStates);
-
-                spiralSplit = false; // do this only once; computationally expensive
+                List<State> spiralTransformedStates = genNextStatesBySpiralEnclosure(x);
+                beam.addAll(spiralTransformedStates); // add more states
+                System.out.println("Added " + spiralTransformedStates.size() + " states as spiral transformation");
             }
 
             // Generate all merged states
-            if (toMerge) {
+            if (toMerge && x.depth > mergeMinDepth) {
                 System.out.println("Generating merged states...");
                 for (int i = 0; i < x.blocks.size(); i++) {
-                    beam.addAll(State.mergeAll(x, i));
+                    List<State> mergedStates = State.mergeAll(x, i);
+                    beam.addAll(mergedStates);
                 }
             }
 

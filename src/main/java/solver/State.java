@@ -65,14 +65,9 @@ public class State implements Comparable<State> {
             State.n = n;
             State.maxScore = n*n;
         }
-
         score = maxScore;
-        Rect board = new Rect(0, 0, n, n);
-        this.blocks.add(board);
 
         areaSet = new TreeSet<>();
-        areaSet.add(board.area);
-
         areaFreq = new AreaFreq();
         this.depth = depth;
     }
@@ -240,8 +235,6 @@ public class State implements Comparable<State> {
 
     State rotate(boolean antiClockwise) {  // top===right, bottom===left
         State s = new State(State.n, this.depth);
-        s.blocks.clear();
-
         for (Rect r: this.blocks) {
             if (antiClockwise)
                 s.blocks.add(r.getReflectedHorizontally().getRotated());
@@ -257,8 +250,6 @@ public class State implements Comparable<State> {
 
     State reflectHorizontally() {
         State s = new State(State.n, this.depth);
-        s.blocks.clear();
-
         for (Rect r: this.blocks) {
             s.blocks.add(r.getReflectedHorizontally());
         }
@@ -270,6 +261,7 @@ public class State implements Comparable<State> {
     }
 
     static State mergeAlongRight(State s, Rect key, Rect q) {
+        int d;
         List<Rect> mergedRects = new ArrayList<>(s.blocks); // copy the existing rectangles
 
         mergedRects.remove(q);
@@ -283,19 +275,22 @@ public class State implements Comparable<State> {
         Rect newRect = new Rect(newRect_x_start, key.y, key.w + q.w, newRect_x_end - newRect_x_start);
         mergedRects.add(newRect);
 
-        if (newRect_x_start > key.x) {
-            key_top = new Rect(key.x, key.y, key.w, newRect_x_start-key.x);
+        d = newRect_x_start - key.x;
+        if (d > 0) {
+            key_top = new Rect(key.x, key.y, key.w, d);
             mergedRects.add(key_top);
         }
-        else {
+        else if (d <= 0) {
             q_top = new Rect(q.x, q.y, q.w, newRect_x_start-q.x);
             mergedRects.add(q_top);
         }
-        if (newRect_x_end < q.x+q.h) {
-            q_bottom = new Rect(newRect_x_end, q.y, q.w, q.x+q.h-newRect_x_end);
+
+        d = newRect_x_end - (q.x+q.h);
+        if (d < 0) {
+            q_bottom = new Rect(newRect_x_end, q.y, q.w, -d);
             mergedRects.add(q_bottom);
         }
-        else {
+        else if (d >= 0) {
             key_bottom = new Rect(newRect_x_end, key.y, key.w, key.x+key.h-newRect_x_end);
             mergedRects.add(key_bottom);
         }
@@ -311,9 +306,11 @@ public class State implements Comparable<State> {
         FileWriter fw = new FileWriter(outFile);
         BufferedWriter bw = new BufferedWriter(fw);
 
+        List<Rect> sortedRects = bestState.blocks.stream().sorted(Rect::compareTo).collect(Collectors.toList());
+
         bw.write("<!DOCTYPE html>\n<html>\n<body>\n");
-        bw.write(String.format("<div>%dx%d solution: Score = %d, #Rectangles = %d</div>",
-                bestState.n, bestState.n, bestState.score, bestState.blocks.size()));
+        bw.write(String.format("<div>%dx%d solution: Score = %d (%s), #Rectangles = %d</div>",
+                bestState.n, bestState.n, bestState.score, sortedRects, bestState.blocks.size()));
         bw.write("<br><br>");
 
         bw.write(bestState.toSVG(MAX/n, color));
@@ -332,7 +329,6 @@ public class State implements Comparable<State> {
         bw.write("<!DOCTYPE html>\n<html>\n<body>\n");
 
         State s = new State(7, 0);
-        s.blocks.clear();
         int p = 4;
 
         s.blocks.add(new Rect(0, 0, 6, 2));
@@ -344,7 +340,8 @@ public class State implements Comparable<State> {
         s.blocks.add(new Rect(3, 6, 1, 1));
         s.blocks.add(new Rect(4, 6, 1, 3));
 
-        System.out.println(s.blocks);
+        s.computeScore();
+        System.out.println(s);
         bw.write(String.format("<svg width=\"%d\" height=\"%d\">\n", State.n*SCALE_FACTOR, State.n*SCALE_FACTOR));
 
         State s_ref = s.reflectHorizontally();
@@ -357,23 +354,28 @@ public class State implements Comparable<State> {
         bw.close();
         fw.close();
 
-        fw = new FileWriter("aftermerge.htm");
-        bw = new BufferedWriter(fw);
-        bw.write("<!DOCTYPE html>\n<html>\n<body>\n");
-        bw.write(String.format("<svg width=\"%d\" height=\"%d\">\n", State.n*SCALE_FACTOR, State.n*SCALE_FACTOR));
-
+        System.out.println("Merged states:");
         List<State> mergedStates = mergeAllAlongRight(s, p);
-        State merged = mergedStates.get(2);
 
-        for (Rect x: merged.blocks) {
-            bw.write(x.toSVG(SCALE_FACTOR, 1, "black"));
-            bw.newLine();
+        int i = 1;
+        for (State merged: mergedStates) {
+            System.out.println(merged);
+
+            fw = new FileWriter(String.format("aftermerge-%d.htm", i++));
+            bw = new BufferedWriter(fw);
+
+            bw.write("<!DOCTYPE html>\n<html>\n<body>\n");
+            bw.write(String.format("<svg width=\"%d\" height=\"%d\">\n", State.n * SCALE_FACTOR, State.n * SCALE_FACTOR));
+
+            for (Rect x : merged.blocks) {
+                bw.write(x.toSVG(SCALE_FACTOR, 1, "black"));
+                bw.newLine();
+            }
+
+            bw.write("</svg></body>\n</html>");
+            bw.close();
+            fw.close();
         }
-        System.out.println(merged.blocks);
-
-        bw.write("</svg></body>\n</html>");
-        bw.close();
-        fw.close();
     }
 }
 

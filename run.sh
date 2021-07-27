@@ -13,8 +13,10 @@ maxstates_to_explore=$4
 beamsize=$5
 sampling=uniform
 gen.spiral=true
+spiral.maxdepth=2
 gen.merge=true
 color=true
+merge.mindepth=2
 EOF1
 
 mvn exec:java@solver -Dexec.args="$1 init.properties"
