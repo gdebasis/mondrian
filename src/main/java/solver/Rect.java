@@ -47,16 +47,18 @@ public class Rect implements Comparable<Rect> {
         Rect a, b;
         List<Rect> children = new ArrayList<>(2);
 
-        if (w-cut<=0 || h-cut<=0)
+        if (vertical && (y+w<=cut || cut<=y))
+            return null;
+        if (!vertical && (x+h<=cut || cut<=x))
             return null;
 
         if (vertical) {
             a = new Rect(x, y, cut, h);
-            b = new Rect(x, y+cut, w-cut, h);
+            b = new Rect(x, y+cut, y+w-cut, h);
         }
         else {
             a = new Rect(x, y, w, cut);
-            b = new Rect(x+cut, y, w, h-cut);
+            b = new Rect(x+cut, y, w, x+h-cut);
         }
         children.add(a);
         children.add(b);

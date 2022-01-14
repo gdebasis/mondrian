@@ -44,6 +44,8 @@ public class StochasticBestFirstSearch {
         toMerge = Boolean.parseBoolean(prop.getProperty("gen.merge", "false"));
         mergeMinDepth = Integer.parseInt(prop.getProperty("merge.mindepth", "4"));
         spiralMaxDepth = Integer.parseInt(prop.getProperty("spiral.maxdepth", "2"));
+
+        System.err.println("Parameters: " + prop);
     }
 
     // beam is an o/p parameter

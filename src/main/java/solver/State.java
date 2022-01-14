@@ -329,7 +329,7 @@ public class State implements Comparable<State> {
         bw.write("<!DOCTYPE html>\n<html>\n<body>\n");
 
         State s = new State(7, 0);
-        int p = 4;
+        int p = 2;
 
         s.blocks.add(new Rect(0, 0, 6, 2));
         s.blocks.add(new Rect(2, 0, 4, 2));
